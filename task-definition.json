@@ -1,0 +1,87 @@
+{
+  "family": "app-template-node",
+  "executionRoleArn": "arn:aws:iam::990110886642:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "app-template-node",
+      "image": "990110886642.dkr.ecr.ap-southeast-2.amazonaws.com/app-template-node:latest",
+      "essential": true,
+      "cpu": 0,
+      "memory": 2048,
+      "memoryReservation": 512,
+
+      "mountPoints": [],
+      "volumesFrom": [],
+
+      "healthCheck": {
+        "retries": 5,
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080 || exit 1"
+        ],
+        "timeout": 3,
+        "interval": 5,
+        "startPeriod": 15
+      },
+
+      "links": [
+        "dogstatsd:dogstatsd"
+      ],
+
+      "portMappings": [
+        {
+          "hostPort": 0,
+          "protocol": "tcp",
+          "containerPort": 8080
+        }
+      ],
+      "ulimits": [
+        {
+          "softLimit": 2048,
+          "hardLimit": 8192,
+          "name": "nofile"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NGIN_SECUREVALUE_SCOPE",
+          "value": "acceptance"
+        },
+        {
+          "name": "SECRET_ID",
+          "value": "masterkey"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "ap-southeast-2"
+        }
+      ],
+      "dockerLabels": {
+        "com.datadoghq.ad.instances": "[{\"host\": \"%%host%%\", \"port\": \"%%port%%\"}]",
+        "com.datadoghq.ad.check_names": "[\"jmx\"]",
+        "com.datadoghq.ad.init_configs": "[{}]",
+        "com.datadoghq.ad.logs": "[{\"source\": \"node\", \"service\": \"app-template-node\",\"tags\": [\"env:acceptance\"]}]"
+      }
+
+    },
+
+    {
+      "name": "dogstatsd",
+      "image": "datadog/docker-dogstatsd",
+      "essential": false,
+      "cpu": 0,
+      "memoryReservation": 128,
+      "mountPoints": [],
+      "volumesFrom": [],
+
+      "environment": [
+      ],
+      "secrets": [
+        {
+          "valueFrom": "arn:aws:ssm:ap-southeast-2:990110886642:parameter/config/application/datadog.apikey",
+          "name": "API_KEY"
+        }
+      ]
+    }
+  ]
+}
